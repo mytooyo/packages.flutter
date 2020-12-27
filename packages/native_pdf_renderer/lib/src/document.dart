@@ -61,19 +61,29 @@ class PdfDocument {
       );
 
   /// Open PDF document from application assets
-  static Future<PdfDocument> openAsset(String name) async => _open(
+  static Future<PdfDocument> openAsset(
+    String name, {
+    PdfDocumentOption option,
+  }) async =>
+      _open(
         await _channel.invokeMethod<Map<dynamic, dynamic>>(
           'open.document.asset',
-          name,
+          option == null ? {'name': name} : option.toJson
+            ..['name'] = name,
         ),
         'asset:$name',
       );
 
   /// Open PDF file from memory (Uint8List)
-  static Future<PdfDocument> openData(Uint8List data) async => _open(
+  static Future<PdfDocument> openData(
+    Uint8List data, {
+    PdfDocumentOption option,
+  }) async =>
+      _open(
         await _channel.invokeMethod<Map<dynamic, dynamic>>(
           'open.document.data',
-          data,
+          option == null ? {'data': data} : option.toJson
+            ..['data'] = data,
         ),
         'memory:$data',
       );
@@ -124,4 +134,23 @@ class PdfDocumentAlreadyClosedException implements Exception {
 class PdfPageNotFoundException implements Exception {
   @override
   String toString() => '$runtimeType: Page is not in the document';
+}
+
+class PdfDocumentOption {
+  PdfDocumentOption({
+    @required this.cMapPacked,
+    @required this.cMapUrl,
+  });
+
+  // pdf.js cMapPacked
+  final bool cMapPacked;
+
+  // pdf.js cMapUrl
+  final String cMapUrl;
+
+  // To Map
+  Map<String, dynamic> get toJson => {
+        'cMapPacked': cMapPacked,
+        'cMapUrl': cMapUrl,
+      };
 }

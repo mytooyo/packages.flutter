@@ -47,8 +47,19 @@ class NativePdfRendererPlugin {
   }
 
   Future<Map<String, dynamic>> openDocumentDataHandler(MethodCall call) async {
-    final documentData = Uint8List.fromList(call.arguments);
-    final documentLoader = PdfJs.getDocument(Settings()..data = documentData);
+    final args = call.arguments;
+    final Uint8List data = args['data'];
+    final bool cMapPacked = args['cMapPacked'];
+    final String cMapUrl = args['cMapUrl'];
+
+    final documentData = Uint8List.fromList(data);
+
+    final settings = Settings()
+      ..data = documentData
+      ..cMapPacked = cMapPacked
+      ..cMapUrl = cMapUrl;
+
+    final documentLoader = PdfJs.getDocument(settings);
     final document = await promiseToFuture<PdfJsDoc>(documentLoader.promise);
 
     return _documents.register(document).infoMap;
@@ -62,11 +73,16 @@ class NativePdfRendererPlugin {
   }
 
   Future<Map<String, dynamic>> openDocumentAssetHandler(MethodCall call) async {
-    final String assetPath = call.arguments;
+    final args = call.arguments;
+    final String assetPath = args['name'];
     final bytes = await rootBundle.load(assetPath);
     return openDocumentDataHandler(MethodCall(
       'open.document.data',
-      bytes.buffer.asUint8List(),
+      {
+        'data': bytes.buffer.asUint8List(),
+        'cMapPacked': args['cMapPacked'],
+        'cMapUrl': args['cMapUrl'],
+      },
     ));
   }
 
